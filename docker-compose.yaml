@@ -1,0 +1,57 @@
+version: "3.9"
+
+networks:
+  devsec-network:
+
+services:
+  devsec-db:
+    container_name: devsec-db
+    image: mysql:8.1
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: bank_db
+      MYSQL_USER: devsecbank
+      MYSQL_PASSWORD: devsecbankpass
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+    command: --default-authentication-plugin=caching_sha2_password
+    networks:
+      - devsec-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  devsec-api:
+    container_name: devsec-api
+    image: mrredcoding/devsec-api
+    ports:
+      - "5000:5000"
+    depends_on:
+      devsec-db:
+        condition: service_healthy
+    environment:
+      DB_URL: jdbc:mysql://devsec-db:3306/bank_db?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      DB_USER: devsecbank
+      DB_PASSWORD: devsecbankpass
+      JWT_SECRET: f75646551f6cc95a654549d2305469e7243032d6b6f3ef056dc2028f5aeedd19
+      JWT_EXPIRATION: 1800000
+    networks:
+      - devsec-network
+
+  devsec-ui:
+    container_name: devsec-ui
+    image: mrredcoding/devsec-ui
+    ports:
+      - "5173:5173"
+    environment:
+      VITE_API_BASE_URL: http://localhost:5000
+    networks:
+      - devsec-network
+
+volumes:
+  mysql-data:
