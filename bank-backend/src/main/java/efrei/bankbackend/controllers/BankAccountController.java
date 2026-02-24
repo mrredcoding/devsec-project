@@ -60,7 +60,7 @@ public class BankAccountController {
     @GetMapping("/mine")
     @PreAuthorize("""
         hasAuthority(T(efrei.bankbackend.entities.RoleType).ROLE_ADMIN.name()) or
-        (hasAuthority(T(efrei.bankbackend.entities.RoleType).ROLE_CLIENT.name()) and @accountComponent.isOwner(authentication.name, authentication))
+        hasAuthority(T(efrei.bankbackend.entities.RoleType).ROLE_CLIENT.name())
     """)
     public ResponseEntity<BankAccountResponse> mine(@NonNull Authentication authentication) throws BaseException {
         log.info("Fetching bank account for authenticated user={}", authentication.getName());
@@ -75,7 +75,7 @@ public class BankAccountController {
     @PatchMapping("/{bankAccountId}/credit")
     @PreAuthorize("""
         hasAuthority(T(efrei.bankbackend.entities.RoleType).ROLE_ADMIN.name()) or
-        (hasAuthority(T(efrei.bankbackend.entities.RoleType).ROLE_CLIENT.name()) and @accountComponent.isOwner(authentication.name, authentication))
+        hasAuthority(T(efrei.bankbackend.entities.RoleType).ROLE_CLIENT.name())
     """)
     public ResponseEntity<BankAccountResponse> credit(
             @PathVariable UUID bankAccountId,
@@ -96,7 +96,7 @@ public class BankAccountController {
     @PatchMapping("/{bankAccountId}/debit")
     @PreAuthorize("""
         hasAuthority(T(efrei.bankbackend.entities.RoleType).ROLE_ADMIN.name()) or
-        (hasAuthority(T(efrei.bankbackend.entities.RoleType).ROLE_CLIENT.name()) and @accountComponent.isOwner(authentication.name, authentication))
+        hasAuthority(T(efrei.bankbackend.entities.RoleType).ROLE_CLIENT.name())
     """)
     public ResponseEntity<BankAccountResponse> debit(
             @PathVariable UUID bankAccountId,

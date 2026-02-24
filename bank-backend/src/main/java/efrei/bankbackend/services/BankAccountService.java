@@ -57,7 +57,7 @@ public class BankAccountService {
     public BankAccount credit(UUID accountId, BigDecimal amount, Authentication authentication) throws BaseException {
         BankAccount account = getAccount(accountId);
 
-        checkAmountByRole(amount, authentication);
+        checkAmountByRole(accountId, amount, authentication);
 
         account.credit(amount);
         return account;
@@ -67,7 +67,7 @@ public class BankAccountService {
     public BankAccount debit(UUID accountId, BigDecimal amount, Authentication authentication) throws BaseException {
         BankAccount account = getAccount(accountId);
 
-        checkAmountByRole(amount, authentication);
+        checkAmountByRole(accountId, amount, authentication);
 
         account.debit(amount);
         return account;
@@ -78,7 +78,7 @@ public class BankAccountService {
                 .orElseThrow(() -> new ResourceNotFoundException("No account found for id '" + accountId + "'."));
     }
 
-    private void checkAmountByRole(BigDecimal amount, Authentication authentication) throws ForbiddenOperationException {
+    private void checkAmountByRole(UUID accountId, BigDecimal amount, Authentication authentication) throws BaseException {
         Collection<? extends GrantedAuthority> authorities = authentication.getAuthorities();
         boolean isAdmin = authorities
                 .stream()
@@ -90,12 +90,17 @@ public class BankAccountService {
                 .anyMatch(authority ->
                         Objects.requireNonNull(authority.getAuthority()).equals(RoleType.ROLE_CLIENT.name()));
 
-        if (isClient && amount.compareTo(TRANSACTION_THRESHOLD) > 0) {
-            throw new ForbiddenOperationException("You cannot operate on amounts greater than " + TRANSACTION_THRESHOLD + " €.");
+        if (isClient) {
+            BankAccount bankAccount = byOwner(authentication.getName());
+            if (!bankAccount.getId().equals(accountId))
+                throw new ForbiddenOperationException("You cannot operate on this account.");
+
+            if (amount.compareTo(TRANSACTION_THRESHOLD) > 0)
+                throw new ForbiddenOperationException("You cannot operate on amounts greater than " + TRANSACTION_THRESHOLD + " €.");
         }
 
-        if (isAdmin && amount.compareTo(TRANSACTION_THRESHOLD) < 0) {
+        if (isAdmin && amount.compareTo(TRANSACTION_THRESHOLD) < 0)
             throw new ForbiddenOperationException("You cannot operate on amounts less than " + TRANSACTION_THRESHOLD + " €.");
-        }
+
     }
 }
