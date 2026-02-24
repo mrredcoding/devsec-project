@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import type { UserAccount } from "../types/UserAccount";
-import { loginRequest, getMe } from "../gateway/authenticationApi";
+import {loginRequest, getMe, logoutRequest} from "../gateway/authenticationApi";
 
 type AuthenticationContextType = {
   user: UserAccount | null;
@@ -25,7 +25,8 @@ export function AuthenticationProvider({ children }: any) {
     setUser(me);
   };
 
-  const logout = () => {
+  const logout = async() => {
+    await logoutRequest();
     localStorage.removeItem("token");
     setUser(null);
   };
