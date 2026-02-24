@@ -30,18 +30,31 @@ public class UserAccountController {
 
     @PostMapping("/login")
     public ResponseEntity<LoginResponse> login(@RequestBody LoginRequest loginRequest) throws BaseException {
-        log.info("Login attempt for email={}", loginRequest.email());
+        log.info("Login attempt for email={}.", loginRequest.email());
 
         UserAccount authenticatedUser = userAccountService.authenticate(loginRequest);
         String jwtToken = jwtService.generateToken(authenticatedUser);
 
         LoginResponse loginResponse = new LoginResponse(jwtToken, jwtService.getExpirationTime());
 
-        log.info("Login successful");
+        log.info("Login successful.");
 
         return ResponseEntity
                 .status(HttpStatus.OK)
                 .body(loginResponse);
+    }
+
+    @PostMapping("/logout")
+    public ResponseEntity<Void> logout(
+            @RequestHeader(value = "Authorization", required = false) String header,
+            Authentication authentication) {
+        log.info("Logout attempt for email={}.", authentication.getName());
+
+        jwtService.logout(header);
+
+        log.info("Logout successful.");
+
+        return ResponseEntity.noContent().build();
     }
 
     @GetMapping("/me")
@@ -49,7 +62,7 @@ public class UserAccountController {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         UserAccount client = (UserAccount) authentication.getPrincipal();
 
-        log.info("Fetching user information for authenticated user={}", authentication.getName());
+        log.info("Fetching user information for authenticated user={}.", authentication.getName());
 
         UserResponse response = new UserResponse(
                 client.getId(),
