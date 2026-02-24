@@ -3,10 +3,11 @@ package efrei.bankbackend.configuration.security;
 import efrei.bankbackend.configuration.security.filters.JwtAuthenticationFilter;
 import efrei.bankbackend.configuration.security.filters.RateLimiterFilter;
 import efrei.bankbackend.entities.RoleType;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -39,6 +40,7 @@ public class SecurityConfiguration {
      * @param jwtAuthenticationFilter The JWT filter for request authentication.
      * @param rateLimiterFilter The filter for request rate limitation.
      */
+    @Autowired
     public SecurityConfiguration(
             AuthenticationProvider authenticationProvider,
             JwtAuthenticationFilter jwtAuthenticationFilter,
@@ -61,6 +63,7 @@ public class SecurityConfiguration {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) {
         http
+                .requiresChannel(channel -> channel.anyRequest().requiresSecure())
                 .csrf(AbstractHttpConfigurer::disable)
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .authorizeHttpRequests(auth -> auth
