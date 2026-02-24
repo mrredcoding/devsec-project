@@ -4,8 +4,8 @@ import efrei.bankbackend.contracts.BankAccountResponse;
 import efrei.bankbackend.entities.BankAccount;
 import efrei.bankbackend.exceptions.BaseException;
 import efrei.bankbackend.services.BankAccountService;
+import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
-import org.jspecify.annotations.NonNull;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -30,11 +30,11 @@ public class BankAccountController {
 
     @PostMapping("/create")
     public ResponseEntity<BankAccountResponse> createAccount(@RequestParam String ownerEmail) throws BaseException {
-        log.info("Creating new bank account for owner={}", ownerEmail);
+        log.info("Creating new bank account for owner={}.", ownerEmail);
 
         BankAccount newBankAccount = bankAccountService.registerBankAccount(ownerEmail);
 
-        log.info("Bank account created successfully: accountId={}", newBankAccount.getId());
+        log.info("Bank account created successfully: accountId={}.", newBankAccount.getId());
 
         return ResponseEntity
                 .status(HttpStatus.CREATED)
@@ -60,10 +60,10 @@ public class BankAccountController {
     @GetMapping("/mine")
     @PreAuthorize("""
         hasAuthority(T(efrei.bankbackend.entities.RoleType).ROLE_ADMIN.name()) or
-        (hasAuthority(T(efrei.bankbackend.entities.RoleType).ROLE_CLIENT.name()) and @accountComponent.isOwner(authentication.name, authentication))
+        (hasAuthority(T(efrei.bankbackend.entities.RoleType).ROLE_CLIENT.name()) and @accountComponent.isOwner(authentication.name))
     """)
     public ResponseEntity<BankAccountResponse> mine(@NonNull Authentication authentication) throws BaseException {
-        log.info("Fetching bank account for authenticated user={}", authentication.getName());
+        log.info("Fetching bank account for authenticated user={}.", authentication.getName());
 
         BankAccount bankAccount = bankAccountService.byOwner(authentication.getName());
 
@@ -75,18 +75,14 @@ public class BankAccountController {
     @PatchMapping("/{bankAccountId}/credit")
     @PreAuthorize("""
         hasAuthority(T(efrei.bankbackend.entities.RoleType).ROLE_ADMIN.name()) or
-        (hasAuthority(T(efrei.bankbackend.entities.RoleType).ROLE_CLIENT.name()) and @accountComponent.isOwner(authentication.name, authentication))
+        (hasAuthority(T(efrei.bankbackend.entities.RoleType).ROLE_CLIENT.name()) and @accountComponent.isOwner(authentication.name))
     """)
-    public ResponseEntity<BankAccountResponse> credit(
-            @PathVariable UUID bankAccountId,
-            @RequestParam BigDecimal amount,
-            Authentication authentication
-    ) throws BaseException {
+    public ResponseEntity<BankAccountResponse> credit(@PathVariable UUID bankAccountId, @RequestParam BigDecimal amount) throws BaseException {
         log.info("Crediting account '{}': amount={}", bankAccountId, amount);
 
-        BankAccount bankAccount = bankAccountService.credit(bankAccountId, amount, authentication);
+        BankAccount bankAccount = bankAccountService.credit(bankAccountId, amount);
 
-        log.info("Bank account credited of {} € successfully: accountId={}, newBalance={}", amount, bankAccount.getId(), bankAccount.getBalance());
+        log.info("Bank account credited of {} € successfully: accountId={}, newBalance={}.", amount, bankAccount.getId(), bankAccount.getBalance());
 
         return ResponseEntity
                 .status(HttpStatus.OK)
@@ -96,18 +92,14 @@ public class BankAccountController {
     @PatchMapping("/{bankAccountId}/debit")
     @PreAuthorize("""
         hasAuthority(T(efrei.bankbackend.entities.RoleType).ROLE_ADMIN.name()) or
-        (hasAuthority(T(efrei.bankbackend.entities.RoleType).ROLE_CLIENT.name()) and @accountComponent.isOwner(authentication.name, authentication))
+        (hasAuthority(T(efrei.bankbackend.entities.RoleType).ROLE_CLIENT.name()) and @accountComponent.isOwner(authentication.name))
     """)
-    public ResponseEntity<BankAccountResponse> debit(
-            @PathVariable UUID bankAccountId,
-            @RequestParam BigDecimal amount,
-            Authentication authentication
-    ) throws BaseException {
+    public ResponseEntity<BankAccountResponse> debit(@PathVariable UUID bankAccountId, @RequestParam BigDecimal amount) throws BaseException {
         log.info("Debiting account '{}': amount={}", bankAccountId, amount);
 
-        BankAccount bankAccount = bankAccountService.debit(bankAccountId, amount, authentication);
+        BankAccount bankAccount = bankAccountService.debit(bankAccountId, amount);
 
-        log.info("Bank account debited of {} € successfully: accountId={}, newBalance={}", amount, bankAccount.getId(), bankAccount.getBalance());
+        log.info("Bank account debited of {} € successfully: accountId={}, newBalance={}.", amount, bankAccount.getId(), bankAccount.getBalance());
 
         return ResponseEntity
                 .status(HttpStatus.OK)
