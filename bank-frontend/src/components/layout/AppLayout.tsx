@@ -23,7 +23,7 @@ export default function AppLayout() {
         {/* Left side logo */}
         <Space style={{ color: "white", fontSize: 18, fontWeight: 600 }}>
           <BankOutlined />
-          Bank App
+            DevSec BANK & Co.
         </Space>
 
         {/* Right side user info */}
