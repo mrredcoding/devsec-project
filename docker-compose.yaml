@@ -6,7 +6,7 @@ networks:
 volumes:
   mysql-data:
   redis-data:
-  traefik-certificates:
+  letsencrypt:
 
 services:
 
