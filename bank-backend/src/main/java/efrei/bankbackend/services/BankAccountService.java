@@ -9,6 +9,7 @@ import efrei.bankbackend.exceptions.ResourceNotFoundException;
 import efrei.bankbackend.repositories.BankAccountRepository;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -54,20 +55,20 @@ public class BankAccountService {
     }
 
     @Transactional
-    public BankAccount credit(UUID accountId, BigDecimal amount, Authentication authentication) throws BaseException {
+    public BankAccount credit(UUID accountId, BigDecimal amount) throws BaseException {
         BankAccount account = getAccount(accountId);
 
-        checkAmountByRole(amount, authentication);
+        checkAmountByRole(amount);
 
         account.credit(amount);
         return account;
     }
 
     @Transactional
-    public BankAccount debit(UUID accountId, BigDecimal amount, Authentication authentication) throws BaseException {
+    public BankAccount debit(UUID accountId, BigDecimal amount) throws BaseException {
         BankAccount account = getAccount(accountId);
 
-        checkAmountByRole(amount, authentication);
+        checkAmountByRole(amount);
 
         account.debit(amount);
         return account;
@@ -78,7 +79,9 @@ public class BankAccountService {
                 .orElseThrow(() -> new ResourceNotFoundException("No account found for id '" + accountId + "'."));
     }
 
-    private void checkAmountByRole(BigDecimal amount, Authentication authentication) throws ForbiddenOperationException {
+    private void checkAmountByRole(BigDecimal amount) throws ForbiddenOperationException {
+        Authentication authentication = Objects.requireNonNull(SecurityContextHolder.getContext().getAuthentication());
+
         Collection<? extends GrantedAuthority> authorities = authentication.getAuthorities();
         boolean isAdmin = authorities
                 .stream()
