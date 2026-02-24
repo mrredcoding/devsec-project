@@ -1,6 +1,8 @@
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useState } from "react";
 import type { UserAccount } from "../types/UserAccount";
 import { loginRequest, getMe } from "../gateway/authenticationApi";
+import {authenticationStorage} from "./authenticationStorage.ts";
+import type {AuthenticationResponse} from "../types/AuthenticationResponse.tsx";
 
 type AuthenticationContextType = {
   user: UserAccount | null;
@@ -17,40 +19,23 @@ export function AuthenticationProvider({ children }: any) {
   const [loading, setLoading] = useState(true);
 
   const login = async (email: string, password: string) => {
-    const token = await loginRequest(email, password);
+    const { token, expiresIn }: AuthenticationResponse = await loginRequest(
+        email,
+        password
+    );
 
-    localStorage.setItem("token", token);
+    authenticationStorage.setToken(token, expiresIn, logout);
 
     const me = await getMe();
     setUser(me);
   };
 
   const logout = () => {
-    localStorage.removeItem("token");
+    authenticationStorage.clear();
     setUser(null);
   };
 
-  useEffect(() => {
-    const init = async () => {
-      const token = localStorage.getItem("token");
-
-      if (!token) {
-        setLoading(false);
-        return;
-      }
-
-      try {
-        const me = await getMe();
-        setUser(me);
-      } catch {
-        logout();
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    init();
-  }, []);
+  useState(() => setLoading(false));
 
   return (
     <AuthenticationContext.Provider value={{ user, login, logout, loading }}>
