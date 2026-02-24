@@ -39,7 +39,7 @@ services:
       DB_USER: devsecbank
       DB_PASSWORD: devsecbankpass
       JWT_SECRET: f75646551f6cc95a654549d2305469e7243032d6b6f3ef056dc2028f5aeedd19
-      JWT_EXPIRATION: 1800000
+      JWT_EXPIRATION: 900000
     networks:
       - devsec-network
 
