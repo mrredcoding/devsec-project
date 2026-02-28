@@ -1,5 +1,8 @@
 package efrei.bankbackend.configuration.security.filters;
 
+import efrei.bankbackend.exceptions.BaseException;
+import efrei.bankbackend.exceptions.TokenInvalidException;
+import io.jsonwebtoken.ExpiredJwtException;
 import efrei.bankbackend.services.JwtService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -17,6 +20,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import org.springframework.web.servlet.HandlerExceptionResolver;
 
 import java.io.IOException;
+import java.util.Optional;
 
 /**
  * Filter for JWT-based authentication.
@@ -27,9 +31,6 @@ import java.io.IOException;
  */
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
-
-    private static final String BEARER_PREFIX = "Bearer ";
-
     private final JwtService jwtService;
     private final UserDetailsService userDetailsService;
     private final HandlerExceptionResolver handlerExceptionResolver;
@@ -69,32 +70,27 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                                     @NonNull HttpServletResponse response,
                                     @NonNull FilterChain filterChain) throws ServletException, IOException {
         try {
-            final String jwt = extractJwtFromRequest(request);
-            if (jwt != null && isAuthenticationAbsent()) {
-                processJwtAuthentication(jwt, request);
+            String header = request.getHeader(JwtService.getAuthorizationHeader());
+
+            Optional<String> existingToken = jwtService.extractToken(header);
+
+            if (existingToken.isEmpty()) {
+                filterChain.doFilter(request, response);
+                return;
             }
+
+            String jwt = existingToken.get();
+
+            processJwtAuthentication(jwt, request);
+
         } catch (Exception exception) {
             handlerExceptionResolver.resolveException(request, response, null, exception);
             return;
         }
+
         filterChain.doFilter(request, response);
     }
 
-    /**
-     * Extracts the JWT from the Authorization header if it exists.
-     *
-     * The JWT is expected to be in the format "Bearer <token>".
-     *
-     * @param request The HTTP request containing the Authorization header.
-     * @return The JWT token, or {@code null} if the header is missing or improperly formatted.
-     */
-    private String extractJwtFromRequest(HttpServletRequest request) {
-        final String authHeader = request.getHeader("Authorization");
-        if (authHeader != null && authHeader.startsWith(BEARER_PREFIX)) {
-            return authHeader.substring(BEARER_PREFIX.length());
-        }
-        return null;
-    }
 
     /**
      * Checks if the current security context has no authentication.
@@ -116,17 +112,27 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
      *
      * @param jwt     The JWT token.
      * @param request The HTTP request.
+     *
+     * @throws BaseException if the token is not valid.
      */
-    private void processJwtAuthentication(String jwt, HttpServletRequest request) {
-        String userEmail = jwtService.extractUsername(jwt);
-        if (userEmail == null)
-            return;
+    private void processJwtAuthentication(String jwt, HttpServletRequest request) throws BaseException {
+        String userEmail;
+        try {
+            userEmail = jwtService.extractUsername(jwt);
+
+        } catch (ExpiredJwtException expiredJwtException) {
+            throw new TokenInvalidException();
+        }
 
         UserDetails userDetails = userDetailsService.loadUserByUsername(userEmail);
-        if (!jwtService.isTokenValid(jwt, userDetails))
-            return;
 
-        setAuthentication(userDetails, request);
+        if (!jwtService.isTokenValid(jwt, userDetails)) {
+            throw new TokenInvalidException();
+        }
+
+        if (isAuthenticationAbsent()) {
+            setAuthentication(userDetails, request);
+        }
     }
 
     /**
