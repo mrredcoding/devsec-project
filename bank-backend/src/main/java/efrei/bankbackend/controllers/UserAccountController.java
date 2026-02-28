@@ -44,6 +44,19 @@ public class UserAccountController {
                 .body(loginResponse);
     }
 
+    @PostMapping("/logout")
+    public ResponseEntity<Void> logout(
+            @RequestHeader(value = "Authorization", required = false) String header,
+            Authentication authentication) {
+        log.info("Logout attempt for email={}.", authentication.getName());
+
+        jwtService.logout(header);
+
+        log.info("Logout successful.");
+
+        return ResponseEntity.noContent().build();
+    }
+
     @GetMapping("/me")
     public ResponseEntity<UserResponse> getAuthenticatedUser() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
