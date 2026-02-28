@@ -7,9 +7,9 @@ export const loginRequest = async (email: string, password: string): Promise<Aut
     return data;
 };
 
-export const logoutRequest = async (): => {
+export const logoutRequest = async (): Promise<void> => {
     await api.post("/auth/logout");
-}
+};
 
 export const getMe = async (): Promise<UserAccount> => {
     const { data } = await api.get("/auth/me");
