@@ -1,5 +1,3 @@
-version: "3.9"
-
 networks:
   devsec-network:
 
@@ -28,7 +26,7 @@ services:
 
   devsec-api:
     container_name: devsec-api
-    image: mrredcoding/devsec-api:26.2.3
+    image: mrredcoding/devsec-api:26.2.1
     ports:
       - "5000:5000"
     depends_on:
@@ -46,7 +44,7 @@ services:
 
   devsec-ui:
     container_name: devsec-ui
-    image: mrredcoding/devsec-ui:26.2.3
+    image: mrredcoding/devsec-ui:26.2.1
     ports:
       - "5173:5173"
     environment:
