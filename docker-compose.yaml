@@ -7,7 +7,7 @@ services:
     image: mysql:8.1
     restart: unless-stopped
     environment:
-      MYSQL_ROOT_PASSWORD: root
+      MYSQL_ROOT_PASSWORD: securedPasswordDevSecBank*12
       MYSQL_DATABASE: bank_db
       MYSQL_USER: devsecbank
       MYSQL_PASSWORD: devsecbankpass
@@ -24,6 +24,24 @@ services:
       timeout: 3s
       retries: 5
 
+  devsec-redis:
+    image: redis:7-alpine
+    container_name: devsec-redis
+
+    command: redis-server --appendonly yes
+
+    volumes:
+      - redis-data:/data
+
+    networks:
+      - devsec-network
+
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
   devsec-api:
     container_name: devsec-api
     image: mrredcoding/devsec-api:26.2.1
@@ -32,11 +50,20 @@ services:
     depends_on:
       devsec-db:
         condition: service_healthy
+      devsec-redis:
+        condition: service_healthy
+
     environment:
       SERVER_PORT: 5000
+
       DB_URL: jdbc:mysql://devsec-db:3306/bank_db?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
       DB_USER: devsecbank
       DB_PASSWORD: devsecbankpass
+
+      SPRING_DATA_REDIS_HOST: devsec-redis
+      SPRING_DATA_REDIS_PORT: 6379
+      SPRING_DATA_REDIS_TIMEOUT: 2000ms
+
       JWT_SECRET: f75646551f6cc95a654549d2305469e7243032d6b6f3ef056dc2028f5aeedd19
       JWT_EXPIRATION: 900000
     networks:
@@ -54,3 +81,4 @@ services:
 
 volumes:
   mysql-data:
+  redis-data:
