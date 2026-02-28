@@ -9,7 +9,7 @@ import {
 import type { UserAccount } from "../types/UserAccount";
 import type { AuthenticationResponse } from "../types/AuthenticationResponse";
 
-import { loginRequest, getMe } from "../gateway/authenticationApi";
+import { loginRequest, logoutRequest, getMe } from "../gateway/authenticationApi";
 import { authenticationStorage } from "./authenticationStorage";
 import { setLogoutHandler } from "../gateway/api";
 
@@ -27,9 +27,10 @@ export function AuthenticationProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<UserAccount | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const logout = () => {
-    authenticationStorage.clear();
-    setUser(null);
+  const logout = async () => {
+      await logoutRequest();
+      authenticationStorage.clear();
+      setUser(null);
   };
 
   useEffect(() => {
@@ -56,8 +57,7 @@ export function AuthenticationProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const login = async (email: string, password: string) => {
-    const { token, expiresIn }: AuthenticationResponse =
-      await loginRequest(email, password);
+    const { token, expiresIn }: AuthenticationResponse = await loginRequest(email, password);
 
     authenticationStorage.setToken(token, expiresIn, logout);
 
